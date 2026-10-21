@@ -29,6 +29,8 @@ spec:
       enabled: true
   mig:
     strategy: single
+  nodeStatusExporter:
+    enabled: true
   daemonsets:
     tolerations:
       - key: "nvidia.com/gpu"
