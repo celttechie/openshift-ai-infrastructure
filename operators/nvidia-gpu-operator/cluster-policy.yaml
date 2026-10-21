@@ -21,12 +21,11 @@ spec:
       default: any
   gfd:
     enabled: true
+  # DCGM is disabled by default for homelab compatibility (UBI10 dcgm image requires x86-64-v3 / AVX2; enable for enterprise/modern CPUs)
   dcgm:
-    enabled: true
+    enabled: false
   dcgmExporter:
-    enabled: true
-    serviceMonitor:
-      enabled: true
+    enabled: false
   mig:
     strategy: single
   nodeStatusExporter:
