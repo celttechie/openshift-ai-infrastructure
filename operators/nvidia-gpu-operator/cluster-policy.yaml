@@ -1,0 +1,36 @@
+# ==============================================================================
+# NVIDIA GPU Operator - ClusterPolicy Custom Resource
+# Configures driver, container-toolkit, device-plugin, DCGM, and time-slicing
+# ==============================================================================
+apiVersion: nvidia.com/v1
+kind: ClusterPolicy
+metadata:
+  name: gpu-cluster-policy
+spec:
+  operator:
+    defaultRuntime: crio
+  driver:
+    enabled: true
+    useHostDriver: false
+  toolkit:
+    enabled: true
+  devicePlugin:
+    enabled: true
+    config:
+      name: time-slicing-config
+      default: any
+  gfd:
+    enabled: true
+  dcgm:
+    enabled: true
+  dcgmExporter:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+  mig:
+    strategy: single
+  daemonsets:
+    tolerations:
+      - key: "nvidia.com/gpu"
+        operator: "Exists"
+        effect: "NoSchedule"

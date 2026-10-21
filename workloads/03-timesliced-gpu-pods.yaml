@@ -1,0 +1,59 @@
+# ==============================================================================
+# Workload 3: Concurrent Time-Sliced Shared GPU Pods
+# Demonstrates multiple independent pods sharing a single physical GPU
+# ==============================================================================
+apiVersion: v1
+kind: Pod
+metadata:
+  name: timesliced-inference-client-a
+  labels:
+    app: shared-ai-service
+    tenant: client-a
+spec:
+  restartPolicy: OnFailure
+  tolerations:
+    - key: "nvidia.com/gpu"
+      operator: "Exists"
+      effect: "NoSchedule"
+  containers:
+    - name: inference-worker-a
+      image: nvcr.io/nvidia/cuda:12.2.0-base-ubi9
+      command: ["/bin/bash", "-c"]
+      args:
+        - |
+          echo "Tenant A: Attached to Shared GPU"
+          nvidia-smi --query-gpu=name,memory.total,memory.free --format=csv
+          sleep 45
+      resources:
+        limits:
+          nvidia.com/gpu: 1
+        requests:
+          nvidia.com/gpu: 1
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: timesliced-inference-client-b
+  labels:
+    app: shared-ai-service
+    tenant: client-b
+spec:
+  restartPolicy: OnFailure
+  tolerations:
+    - key: "nvidia.com/gpu"
+      operator: "Exists"
+      effect: "NoSchedule"
+  containers:
+    - name: inference-worker-b
+      image: nvcr.io/nvidia/cuda:12.2.0-base-ubi9
+      command: ["/bin/bash", "-c"]
+      args:
+        - |
+          echo "Tenant B: Attached to Shared GPU"
+          nvidia-smi --query-gpu=name,memory.total,memory.free --format=csv
+          sleep 45
+      resources:
+        limits:
+          nvidia.com/gpu: 1
+        requests:
+          nvidia.com/gpu: 1

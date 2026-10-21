@@ -1,0 +1,40 @@
+# ==============================================================================
+# Git Ignore - openshift-ai-infrastructure
+# ==============================================================================
+
+# OpenTofu / Terraform local files
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfplan
+terraform.tfvars
+*.auto.tfvars
+
+# Credentials, secrets, and private keys
+*.pem
+*.key
+*.pub
+.keys/
+.env
+secret*
+credentials*
+*-secret.yaml
+
+# OS and Editor artifacts
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.log
+
+# Python / Pip artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/

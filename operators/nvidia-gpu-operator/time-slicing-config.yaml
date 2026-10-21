@@ -1,0 +1,17 @@
+# ==============================================================================
+# NVIDIA GPU Operator - Time-Slicing Sharing Configuration
+# Divides 1 physical GPU into 4 virtual slices for concurrent pod execution
+# ==============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: time-slicing-config
+  namespace: nvidia-gpu-operator
+data:
+  any: |-
+    version: v1
+    sharing:
+      timeSlicing:
+        resources:
+          - name: nvidia.com/gpu
+            replicas: 4

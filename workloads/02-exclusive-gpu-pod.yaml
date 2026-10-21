@@ -1,0 +1,34 @@
+# ==============================================================================
+# Workload 2: Exclusive Dedicated GPU Workload
+# Requests 1 whole GPU, locking out other workloads for dedicated inference
+# ==============================================================================
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dedicated-gpu-workload
+  labels:
+    app: dedicated-ai-service
+spec:
+  restartPolicy: OnFailure
+  nodeSelector:
+    nvidia.com/gpu.present: "true"
+  tolerations:
+    - key: "nvidia.com/gpu"
+      operator: "Exists"
+      effect: "NoSchedule"
+  containers:
+    - name: gpu-burn-test
+      image: nvcr.io/nvidia/cuda:12.2.0-base-ubi9
+      command: ["/bin/bash", "-c"]
+      args:
+        - |
+          echo "=== Exclusive GPU Workload Running ==="
+          nvidia-smi
+          echo "Simulating active inference loop for 60 seconds..."
+          sleep 60
+          echo "Workload complete."
+      resources:
+        limits:
+          nvidia.com/gpu: 1
+        requests:
+          nvidia.com/gpu: 1
