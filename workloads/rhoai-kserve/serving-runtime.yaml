@@ -1,0 +1,53 @@
+apiVersion: serving.kserve.io/v1alpha1
+kind: ServingRuntime
+metadata:
+  name: vllm-serving-runtime
+  namespace: llm-serving
+  labels:
+    app.kubernetes.io/name: vllm-serving-runtime
+    app.kubernetes.io/component: model-serving
+    opendatahub.io/dashboard: "true"
+  annotations:
+    openshift.io/display-name: "vLLM ServingRuntime for OpenShift AI"
+    opendatahub.io/recommended-accelerators: '["nvidia.com/gpu"]'
+    openshift.io/description: "High-throughput OpenShift AI ServingRuntime powered by vLLM with PagedAttention and continuous batching"
+spec:
+  supportedModelFormats:
+    - name: vLLM
+      version: "1"
+      autoSelect: true
+  containers:
+    - name: kserve-container
+      image: docker.io/vllm/vllm-openai:latest
+      imagePullPolicy: IfNotPresent
+      command:
+        - vllm
+        - serve
+      args:
+        - --port
+        - "8000"
+        - --model
+        - /mnt/models
+        - --max-model-len
+        - "4096"
+        - --gpu-memory-utilization
+        - "0.85"
+        - --enforce-eager
+        - --trust-remote-code
+      env:
+        - name: HF_HOME
+          value: /tmp/hf_home
+        - name: VLLM_USAGE_SOURCE
+          value: openshift-ai-infrastructure
+      ports:
+        - name: http1
+          containerPort: 8000
+          protocol: TCP
+      volumeMounts:
+        - name: dshm
+          mountPath: /dev/shm
+  volumes:
+    - name: dshm
+      emptyDir:
+        medium: Memory
+  multiModel: false

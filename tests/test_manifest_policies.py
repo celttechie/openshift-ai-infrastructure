@@ -189,3 +189,70 @@ def test_vllm_prometheus_rules():
     ]
     for alert in expected_alerts:
         assert alert in alert_names, f"Expected alert '{alert}' not found in PrometheusRule"
+
+
+def test_kserve_serving_runtime_specs():
+    rt_path = os.path.join(REPO_ROOT, "workloads", "rhoai-kserve", "serving-runtime.yaml")
+    manifest = load_yaml(rt_path)
+    assert manifest.get("kind") == "ServingRuntime"
+    spec = manifest.get("spec", {})
+
+    # Verify model formats
+    formats = [f["name"] for f in spec.get("supportedModelFormats", [])]
+    assert "vLLM" in formats, "ServingRuntime must support vLLM model format"
+
+    # Verify container configuration
+    containers = spec.get("containers", [])
+    assert len(containers) > 0
+    kserve_ctr = containers[0]
+    assert kserve_ctr.get("name") == "kserve-container"
+    assert "--enforce-eager" in kserve_ctr.get("args", [])
+
+    # Verify shared memory mount
+    mounts = [m["mountPath"] for m in kserve_ctr.get("volumeMounts", [])]
+    assert "/dev/shm" in mounts, "ServingRuntime must mount /dev/shm"
+
+
+def test_kserve_inference_service_specs():
+    isvc_path = os.path.join(REPO_ROOT, "workloads", "rhoai-kserve", "inference-service.yaml")
+    manifest = load_yaml(isvc_path)
+    assert manifest.get("kind") == "InferenceService"
+
+    annotations = manifest.get("metadata", {}).get("annotations", {})
+    assert annotations.get("serving.kserve.io/deploymentMode") == "RawDeployment"
+
+    predictor = manifest.get("spec", {}).get("predictor", {})
+    model = predictor.get("model", {})
+    assert model.get("runtime") == "vllm-serving-runtime"
+    assert model.get("modelFormat", {}).get("name") == "vLLM"
+
+    # Verify GPU resource quotas
+    resources = model.get("resources", {})
+    limits = resources.get("limits", {})
+    requests = resources.get("requests", {})
+    assert str(limits.get("nvidia.com/gpu")) == "1"
+    assert str(requests.get("nvidia.com/gpu")) == "1"
+
+
+def test_kserve_storage_connection_secret():
+    secret_path = os.path.join(REPO_ROOT, "workloads", "rhoai-kserve", "storage-connection.yaml")
+    manifest = load_yaml(secret_path)
+    assert manifest.get("kind") == "Secret"
+
+    annotations = manifest.get("metadata", {}).get("annotations", {})
+    assert annotations.get("opendatahub.io/connection-type") == "s3"
+
+    string_data = manifest.get("stringData", {})
+    required_keys = ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_S3_ENDPOINT", "AWS_S3_BUCKET"]
+    for key in required_keys:
+        assert key in string_data, f"Storage connection secret missing key: {key}"
+
+
+def test_kustomize_build_rhoai_kserve():
+    kustomize_dir = os.path.join(REPO_ROOT, "workloads", "rhoai-kserve")
+    cmd = ["kubectl", "kustomize", kustomize_dir]
+    res = subprocess.run(cmd, capture_output=True, text=True)
+    assert res.returncode == 0, f"kubectl kustomize failed on {kustomize_dir}: {res.stderr}"
+
+    docs = list(yaml.safe_load_all(res.stdout))
+    assert len(docs) == 3, f"Expected 3 resources in rhoai-kserve kustomize output, got {len(docs)}"
