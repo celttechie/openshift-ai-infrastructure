@@ -62,6 +62,7 @@ flowchart TD
 openshift-ai-infrastructure/
 ├── README.md                              # Main portfolio documentation & architectural guide
 ├── docs/
+│   ├── ai-workloads-roadmap.md            # Enterprise AI workloads, LLM serving & RAG roadmap
 │   └── gpu-infrastructure-guide.md       # Technical guide on GPU scheduling & failure modes
 ├── targets/
 │   ├── t5600-homelab/                     # Homelab PCIe VFIO GPU Passthrough
@@ -79,10 +80,18 @@ openshift-ai-infrastructure/
 ├── workloads/
 │   ├── 01-cuda-vectoradd.yaml             # Sanity check CUDA kernel execution pod
 │   ├── 02-exclusive-gpu-pod.yaml          # Dedicated GPU allocation pod (whole GPU)
-│   └── 03-timesliced-gpu-pods.yaml        # Two concurrent pods sharing 1 GPU
+│   ├── 03-timesliced-gpu-pods.yaml        # Two concurrent pods sharing 1 GPU
+│   └── vllm/                              # Production vLLM LLM Inference Serving Engine
+│       ├── 00-namespace.yaml              # Dedicated namespace (llm-serving) & ServiceAccount
+│       ├── 01-rbac.yaml                   # SCC hostmount binding for local model cache
+│       ├── 02-storage.yaml                # PersistentVolume for Hugging Face model weight cache
+│       ├── 03-deployment.yaml             # GPU-accelerated vLLM OpenAI-compatible engine
+│       ├── 04-service.yaml                # Internal cluster service (port 8000)
+│       ├── 05-route.yaml                  # OpenShift Route with Edge TLS termination
+│       └── kustomization.yaml             # Declarative GitOps deployment bundle
 └── scripts/
-    └── gpu-troubleshoot.sh                # Automated diagnostic & health inspection tool
-```
+    ├── gpu-troubleshoot.sh                # Automated diagnostic & health inspection tool
+    └── test-vllm-endpoint.sh              # vLLM endpoint tester & throughput benchmark
 
 ---
 
@@ -108,10 +117,26 @@ oc apply -f workloads/01-cuda-vectoradd.yaml
 oc logs -f cuda-vectoradd-sanity
 ```
 
+### Step 4: Deploy Production LLM Inference (vLLM)
+Deploy an enterprise OpenAI-compatible LLM serving engine (Qwen2.5 / Llama 3.1) with PagedAttention and continuous batching:
+```bash
+oc apply -k workloads/vllm/
+```
+
+### Step 5: Test & Benchmark LLM Inference
+Query the OpenShift route, verify the active model, and benchmark token generation throughput:
+```bash
+./scripts/test-vllm-endpoint.sh "Explain OpenShift AI architecture in two sentences."
+```
+
 ---
 
 ## 5. Architectural & Technical Guides
 
+- **[AI Workloads & LLM Infrastructure Roadmap](docs/ai-workloads-roadmap.md)**: A complete milestone implementation plan covering:
+  - 4-phase enterprise roadmap: vLLM serving, Red Hat OpenShift AI (RHOAI), Private RAG, and time-slicing micro-services.
+  - Alignment with Cisco AI partnerships, Cisco Validated Designs (CVDs), and on-prem enterprise architectures.
+  - Hardware sizing, VRAM budgeting, and verification checklists.
 - **[Kubernetes & OpenShift GPU Infrastructure Guide](docs/gpu-infrastructure-guide.md)**: A complete technical reference covering:
   - Why Kubernetes needs device plugins for GPUs.
   - Exclusive allocation vs. Time-Slicing vs. Multi-Instance GPU (MIG).
