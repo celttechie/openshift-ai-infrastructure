@@ -49,6 +49,7 @@ sync_admin_script() {
 exec_host_action() {
   local action="$1"
   sync_admin_script
+  # shellcheck disable=SC2029
   ssh "${REMOTE_HOST}" "echo '{\"action\": \"${action}\"}' > /home/bjarrett/admin_tools/action.json && sudo /usr/bin/python3 /home/bjarrett/admin_tools/sb_admin.py"
 }
 
@@ -132,6 +133,7 @@ do_attach_vm() {
   fi
 
   # Create device XMLs on hypervisor
+  # shellcheck disable=SC2029
   ssh "${REMOTE_HOST}" "cat <<'EOF' > /tmp/gpu_vga.xml
 <hostdev mode='subsystem' type='pci' managed='yes'>
   <source>
@@ -164,6 +166,7 @@ do_restore_host() {
     if virsh -c "${LIBVIRT_URI}" domstate "${domain}" 2>/dev/null | grep -q "running"; then
       live_flag="--live"
     fi
+    # shellcheck disable=SC2029
     ssh "${REMOTE_HOST}" "virsh -c qemu:///system detach-device '${domain}' /tmp/gpu_vga.xml ${live_flag} --config 2>/dev/null || true
 virsh -c qemu:///system detach-device '${domain}' /tmp/gpu_audio.xml ${live_flag} --config 2>/dev/null || true"
   fi

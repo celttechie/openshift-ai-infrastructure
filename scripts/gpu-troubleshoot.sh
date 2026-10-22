@@ -32,7 +32,7 @@ if ssh -q "${REMOTE_HOST}" "lspci | grep -i -E 'nvidia|ga106'" > /dev/null 2>&1;
   GPU_DEVICE=$(ssh "${REMOTE_HOST}" "lspci | grep -i -E 'nvidia|ga106'" | head -n 1)
   echo -e "  [${GREEN}PASS${NC}] Found physical GPU: ${GPU_DEVICE}"
 else
-  echo -e "  [${YELLOW}WARN${NC}] No NVIDIA PCIe device detected via lspci on ${REMOTE_HOST}."
+  echo -e "  [${RED}WARN${NC}] No NVIDIA PCIe device detected via lspci on ${REMOTE_HOST}."
   ALL_PASS=false
 fi
 
@@ -102,6 +102,7 @@ k8s_run() {
   if [[ "${K8S_CMD}" =~ ^ssh ]]; then
     ${K8S_CMD} "${cmd}"
   else
+    # shellcheck disable=SC2086
     ${K8S_CMD} ${cmd}
   fi
 }
@@ -134,6 +135,10 @@ if [[ -n "${K8S_CMD}" ]] && k8s_run "get nodes" > /dev/null 2>&1; then
   else
     echo -e "  [${BLUE}INFO${NC}] No active pods requesting 'nvidia.com/gpu' at this time."
   fi
+fi
+
+if [[ "${ALL_PASS}" == "false" ]]; then
+  echo -e "\n  [${YELLOW}NOTE${NC}] One or more hardware diagnostic steps reported warnings."
 fi
 
 echo -e "\n${BLUE}${BOLD}================================================================${NC}"

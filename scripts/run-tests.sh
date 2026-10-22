@@ -31,7 +31,6 @@ if [[ ! -d "${VENV_DIR}" ]]; then
   "${VENV_DIR}/bin/pip" install -r "${REPO_ROOT}/requirements-dev.txt" -q
 fi
 
-PYTHON="${VENV_DIR}/bin/python"
 PYTEST="${VENV_DIR}/bin/pytest"
 YAMLLINT="${VENV_DIR}/bin/yamllint"
 FLAKE8="${VENV_DIR}/bin/flake8"
