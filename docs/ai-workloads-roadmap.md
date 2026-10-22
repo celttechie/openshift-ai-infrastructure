@@ -67,11 +67,12 @@ graph TD
   * [x] Declarative vLLM Deployment serving `Qwen/Qwen2.5-3B-Instruct` with `--enforce-eager` and `strategy: Recreate` (`workloads/vllm/03-deployment.yaml`).
   * [x] ClusterIP Service and Edge TLS Ingress Route (`workloads/vllm/04-service.yaml`, `05-route.yaml`).
   * [x] Automated CLI benchmark script measuring TTFT, tokens/sec, and health (`scripts/test-vllm-endpoint.sh`).
-* **SRE Hardening Deliverables (Next Actions)**:
-  * [ ] **OpenShift User Workload Monitoring**: Deploy `ServiceMonitor` targeting vLLM's native `/metrics` endpoint on port 8000 (`workloads/vllm/monitoring/service-monitor.yaml`).
-  * [ ] **Prometheus Alerting Rules**: Create `PrometheusRule` defining alerts for high request latency, queue saturation, and GPU VRAM exhaustion (`workloads/vllm/monitoring/prometheus-rules.yaml`).
-  * [ ] **Workload Resilience**: Implement `PodDisruptionBudget` (`minAvailable: 1`) and configure `terminationGracePeriodSeconds: 60` for graceful in-flight request completion.
-  * [ ] **Network Isolation**: Implement OpenShift `NetworkPolicy` restricting ingress to authorized OpenShift routers and Prometheus monitoring pods.
+* **SRE Hardening Deliverables**:
+  * [x] **OpenShift User Workload Monitoring**: Deploy `ServiceMonitor` targeting vLLM's native `/metrics` endpoint on port 8000 (`workloads/vllm/monitoring/service-monitor.yaml`) and cluster config (`operators/monitoring/cluster-monitoring-config.yaml`).
+  * [x] **Prometheus Alerting Rules**: Create `PrometheusRule` defining alerts for high request latency, queue saturation, and GPU VRAM exhaustion (`workloads/vllm/monitoring/prometheus-rules.yaml`).
+  * [x] **Workload Resilience**: Implement `PodDisruptionBudget` (`minAvailable: 1`) in `workloads/vllm/06-pdb.yaml` and configure `terminationGracePeriodSeconds: 60` for graceful in-flight request draining.
+  * [x] **Network Isolation**: Implement OpenShift `NetworkPolicy` restricting ingress to authorized OpenShift routers and Prometheus monitoring pods (`workloads/vllm/07-network-policy.yaml`).
+  * [x] **Policy Guardrail & Unit Tests**: Automated pytest suite validating termination grace periods, PDB constraints, alerting rules, and Kustomize build (`tests/test_manifest_policies.py`).
   * [ ] **Security Posture Review**: Scope SCC permissions from broad `privileged` access toward specific Linux capabilities (`IPC_LOCK`, `SYS_PTRACE`).
 
 ---

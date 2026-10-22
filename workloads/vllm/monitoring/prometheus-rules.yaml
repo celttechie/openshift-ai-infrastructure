@@ -1,0 +1,72 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: vllm-sre-alerts
+  namespace: llm-serving
+  labels:
+    app: vllm-inference-engine
+    role: alert-rules
+    openshift.io/user-monitoring: "true"
+spec:
+  groups:
+  - name: vllm.rules
+    rules:
+    - alert: VLLMEngineDown
+      expr: up{namespace="llm-serving"} == 0
+      for: 2m
+      labels:
+        severity: critical
+        team: ai-platform
+      annotations:
+        summary: "vLLM Inference Engine is down"
+        description: "The vLLM inference engine instance {{ $labels.instance }} has been unreachable for more than 2 minutes."
+
+    - alert: VLLMHighLatencyP95
+      expr: histogram_quantile(0.95, sum(rate(vllm:e2e_request_latency_seconds_bucket[5m])) by (le)) > 2.0
+      for: 5m
+      labels:
+        severity: warning
+        team: ai-platform
+      annotations:
+        summary: "High P95 inference latency on vLLM"
+        description: "95th percentile request latency exceeds 2.0s over the past 5 minutes (current value: {{ $value }}s)."
+
+    - alert: VLLMQueueSaturation
+      expr: vllm:num_requests_waiting{namespace="llm-serving"} > 10
+      for: 3m
+      labels:
+        severity: warning
+        team: ai-platform
+      annotations:
+        summary: "vLLM inference request queue is saturating"
+        description: "More than 10 requests have been queued waiting for execution for over 3 minutes."
+
+    - alert: VLLMKVCacheHigh
+      expr: vllm:kv_cache_usage_perc{namespace="llm-serving"} > 0.85
+      for: 3m
+      labels:
+        severity: warning
+        team: ai-platform
+      annotations:
+        summary: "vLLM KV Cache utilization is high"
+        description: "KV cache memory utilization is above 85% for 3 minutes (current value: {{ $value }})."
+
+    - alert: VLLMKVCacheCritical
+      expr: vllm:kv_cache_usage_perc{namespace="llm-serving"} > 0.95
+      for: 1m
+      labels:
+        severity: critical
+        team: ai-platform
+      annotations:
+        summary: "vLLM KV Cache exhaustion imminent"
+        description: "KV cache utilization exceeds 95%. Risk of query preemptions or CUDA out-of-memory."
+
+    - alert: VLLMEnginePreemptionsActive
+      expr: rate(vllm:num_preemptions_total{namespace="llm-serving"}[5m]) > 0
+      for: 2m
+      labels:
+        severity: warning
+        team: ai-platform
+      annotations:
+        summary: "vLLM request preemptions detected"
+        description: "vLLM is actively preempting requests due to KV cache pressure."
