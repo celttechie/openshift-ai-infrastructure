@@ -3,7 +3,7 @@ kind: Namespace
 metadata:
   name: llm-serving
   labels:
-    openshift.io/cluster-monitoring: "true"
+    openshift.io/user-monitoring: "true"
     ai.openshift.io/workload: "inference"
 ---
 apiVersion: v1

@@ -1,0 +1,12 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: vllm-pdb
+  namespace: llm-serving
+  labels:
+    app: vllm-inference-engine
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: vllm-inference-engine

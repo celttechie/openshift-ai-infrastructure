@@ -131,3 +131,61 @@ def test_kustomize_build_vllm():
     # Verify generated output contains valid YAML documents
     docs = list(yaml.safe_load_all(res.stdout))
     assert len(docs) >= 5, f"Expected at least 5 resources in kustomize output, got {len(docs)}"
+
+
+def test_vllm_deployment_termination_grace_period():
+    manifest = load_yaml(VLLM_DEPLOYMENT)
+    pod_spec = manifest["spec"]["template"]["spec"]
+    grace_period = pod_spec.get("terminationGracePeriodSeconds")
+    assert grace_period is not None, "vLLM deployment must specify terminationGracePeriodSeconds"
+    assert grace_period >= 60, f"terminationGracePeriodSeconds must be at least 60s, got {grace_period}"
+
+
+def test_vllm_pod_disruption_budget():
+    pdb_path = os.path.join(REPO_ROOT, "workloads", "vllm", "06-pdb.yaml")
+    manifest = load_yaml(pdb_path)
+    assert manifest.get("kind") == "PodDisruptionBudget"
+    assert manifest["spec"]["minAvailable"] == 1
+    assert manifest["spec"]["selector"]["matchLabels"]["app"] == "vllm-inference-engine"
+
+
+def test_vllm_network_policy():
+    netpol_path = os.path.join(REPO_ROOT, "workloads", "vllm", "07-network-policy.yaml")
+    manifest = load_yaml(netpol_path)
+    assert manifest.get("kind") == "NetworkPolicy"
+    ingress_rules = manifest["spec"].get("ingress", [])
+    assert len(ingress_rules) >= 2, "NetworkPolicy must define ingress rules for router and monitoring"
+
+    # Verify ingress port 8000 is opened
+    ports = [p["port"] for rule in ingress_rules for p in rule.get("ports", [])]
+    assert 8000 in ports, "Port 8000 must be permitted in NetworkPolicy ingress"
+
+
+def test_vllm_service_monitor():
+    sm_path = os.path.join(REPO_ROOT, "workloads", "vllm", "monitoring", "service-monitor.yaml")
+    manifest = load_yaml(sm_path)
+    assert manifest.get("kind") == "ServiceMonitor"
+    endpoints = manifest["spec"].get("endpoints", [])
+    assert len(endpoints) > 0, "ServiceMonitor must define at least one endpoint"
+    endpoint = endpoints[0]
+    assert endpoint.get("port") == "http"
+    assert endpoint.get("path") == "/metrics"
+
+
+def test_vllm_prometheus_rules():
+    rules_path = os.path.join(REPO_ROOT, "workloads", "vllm", "monitoring", "prometheus-rules.yaml")
+    manifest = load_yaml(rules_path)
+    assert manifest.get("kind") == "PrometheusRule"
+    groups = manifest["spec"].get("groups", [])
+    assert len(groups) > 0
+    alert_names = [rule["alert"] for rule in groups[0].get("rules", [])]
+    expected_alerts = [
+        "VLLMEngineDown",
+        "VLLMHighLatencyP95",
+        "VLLMQueueSaturation",
+        "VLLMKVCacheHigh",
+        "VLLMKVCacheCritical",
+        "VLLMEnginePreemptionsActive",
+    ]
+    for alert in expected_alerts:
+        assert alert in alert_names, f"Expected alert '{alert}' not found in PrometheusRule"

@@ -8,3 +8,7 @@ resources:
 - 03-deployment.yaml
 - 04-service.yaml
 - 05-route.yaml
+- 06-pdb.yaml
+- 07-network-policy.yaml
+- monitoring/service-monitor.yaml
+- monitoring/prometheus-rules.yaml

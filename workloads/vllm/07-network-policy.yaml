@@ -1,0 +1,38 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: vllm-network-isolation
+  namespace: llm-serving
+  labels:
+    app: vllm-inference-engine
+spec:
+  podSelector:
+    matchLabels:
+      app: vllm-inference-engine
+  policyTypes:
+  - Ingress
+  ingress:
+  # Allow traffic from OpenShift Ingress Router pods
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          network.openshift.io/policy-group: ingress
+    ports:
+    - protocol: TCP
+      port: 8000
+
+  # Allow scraping from OpenShift Cluster & User Workload Monitoring
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          network.openshift.io/policy-group: monitoring
+    ports:
+    - protocol: TCP
+      port: 8000
+
+  # Allow intra-namespace communication (diagnostics, test pods)
+  - from:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 8000

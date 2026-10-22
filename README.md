@@ -76,6 +76,8 @@ openshift-ai-infrastructure/
 │       ├── gpu-host-admin.py              # Automated host VFIO binding state-machine
 │       └── gpu-passthrough.tf             # Libvirt XML hostdev attachment module
 ├── operators/
+│   ├── monitoring/                        # Platform Observability
+│   │   └── cluster-monitoring-config.yaml # ConfigMap enabling OpenShift User Workload Monitoring
 │   └── nvidia-gpu-operator/               # GPU Operator Lifecycle
 │       ├── cluster-policy.yaml            # ClusterPolicy with CRI-O and DCGM enabled
 │       └── time-slicing-config.yaml       # ConfigMap dividing 1 GPU into 4 virtual slices
@@ -90,6 +92,11 @@ openshift-ai-infrastructure/
 │       ├── 03-deployment.yaml             # GPU-accelerated vLLM OpenAI-compatible engine
 │       ├── 04-service.yaml                # Internal cluster service (port 8000)
 │       ├── 05-route.yaml                  # OpenShift Route with Edge TLS termination
+│       ├── 06-pdb.yaml                    # PodDisruptionBudget (minAvailable: 1)
+│       ├── 07-network-policy.yaml         # Ingress network isolation policy
+│       ├── monitoring/                    # SRE Observability & Alerts
+│       │   ├── prometheus-rules.yaml      # SRE alerts (latency P95, queue saturation, KV cache)
+│       │   └── service-monitor.yaml       # User Workload ServiceMonitor for vLLM metrics
 │       └── kustomization.yaml             # Declarative GitOps deployment bundle
 └── scripts/
     ├── gpu-troubleshoot.sh                # Automated diagnostic & health inspection tool
