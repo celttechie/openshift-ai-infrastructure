@@ -1,0 +1,31 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: qwen25-3b-service
+  namespace: llm-serving
+  labels:
+    app.kubernetes.io/name: qwen25-3b-service
+    app.kubernetes.io/component: model-serving
+    opendatahub.io/dashboard: "true"
+  annotations:
+    openshift.io/display-name: "Qwen 2.5 3B Instruct Service"
+    serving.kserve.io/deploymentMode: RawDeployment
+    serving.kserve.io/enable-prometheus-scraping: "true"
+spec:
+  predictor:
+    model:
+      modelFormat:
+        name: vLLM
+      runtime: vllm-serving-runtime
+      storage:
+        key: aws-connection-model-registry
+        path: models/Qwen2.5-3B-Instruct
+      resources:
+        limits:
+          cpu: "4"
+          memory: 16Gi
+          nvidia.com/gpu: "1"
+        requests:
+          cpu: "2"
+          memory: 8Gi
+          nvidia.com/gpu: "1"

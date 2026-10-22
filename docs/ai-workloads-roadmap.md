@@ -78,16 +78,18 @@ graph TD
 ---
 
 ### Milestone 2: Declarative OpenShift AI (RHOAI) & KServe ServingRuntime Patterns
-* **Status**: **Planned**
+* **Status**: **Complete (PR Open)**
 * **Objective**: Deliver enterprise OpenShift AI / KServe declarative serving patterns without the cluster footprint of full upstream Open Data Hub (ODH) on resource-constrained SNO.
 * **Architecture Strategy**:
   * Avoid installing the full heavy RHOAI operator bundle (which consumes >16GB RAM for Kubeflow, Elyra, Dashboard, and Knative components).
   * Deliver the **exact declarative Custom Resources** that OpenShift AI uses under the hood: `ServingRuntime` and `InferenceService`.
 * **Deliverables**:
-  * [ ] **vLLM ServingRuntime Manifest**: Define an OpenShift AI `ServingRuntime` custom resource specifying container images, arguments, ports, and multi-model capabilities (`workloads/rhoai-kserve/serving-runtime.yaml`).
-  * [ ] **Declarative InferenceService**: Define a KServe `InferenceService` spec showcasing how enterprise platforms decouple model storage, runtime environments, and autoscaling (`workloads/rhoai-kserve/inference-service.yaml`).
-  * [ ] **Model Storage Architecture Pattern**: Document the transition from local `hostPath` storage to enterprise S3-compatible model registries (e.g., MinIO or AWS S3) with secure IAM credentials.
-  * [ ] **Deployment Topology Comparison Guide**: A technical reference comparing Single-Model Serving, ModelMesh, and vLLM continuous batching for enterprise architects (`docs/model-serving-topologies.md`).
+  * [x] **vLLM ServingRuntime Manifest**: Define an OpenShift AI `ServingRuntime` custom resource specifying container images, arguments, ports, and multi-model capabilities (`workloads/rhoai-kserve/serving-runtime.yaml`).
+  * [x] **Declarative InferenceService**: Define a KServe `InferenceService` spec showcasing how enterprise platforms decouple model storage, runtime environments, and autoscaling via `RawDeployment` (`workloads/rhoai-kserve/inference-service.yaml`).
+  * [x] **Model Storage Architecture Pattern**: Implement S3-compatible OpenShift AI data connection secret (`workloads/rhoai-kserve/storage-connection.yaml`) decoupling weights from container images.
+  * [x] **Lightweight CRD Definitions**: Package standalone `ServingRuntime` and `InferenceService` CRDs (`workloads/rhoai-kserve/crds/`) for portable, zero-overhead validation across any cluster.
+  * [x] **Deployment Topology Comparison Guide**: A technical reference comparing Raw Deployment, KServe RawDeployment, KServe Serverless, and ModelMesh for enterprise architects (`docs/model-serving-topologies.md`).
+  * [x] **Automated Policy Guardrails**: Pytest suite validating KServe runtime specs, S3 secret schemas, and Kustomize build (`tests/test_manifest_policies.py`).
 
 ---
 

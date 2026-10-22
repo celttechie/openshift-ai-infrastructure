@@ -51,6 +51,7 @@ jobs:
       - name: Validate Kustomize Manifest Builds
         run: |
           kubectl kustomize workloads/vllm > /dev/null
+          kubectl kustomize workloads/rhoai-kserve > /dev/null
 
       - name: Run Python Unit Tests & Policy Guardrails (pytest)
         run: |

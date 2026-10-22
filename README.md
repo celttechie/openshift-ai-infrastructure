@@ -69,7 +69,8 @@ openshift-ai-infrastructure/
 ├── README.md                              # Main architecture & research testbed guide
 ├── docs/
 │   ├── ai-workloads-roadmap.md            # Applied SRE roadmap, milestones & research objectives
-│   └── gpu-infrastructure-guide.md       # Technical guide on GPU scheduling & failure modes
+│   ├── gpu-infrastructure-guide.md       # Technical guide on GPU scheduling & failure modes
+│   └── model-serving-topologies.md        # Architecture guide: RawDeployment vs Serverless vs ModelMesh
 ├── targets/
 │   └── t5600-homelab/                     # Host PCIe VFIO GPU Passthrough
 │       ├── README.md                      # Host configuration runbook (IOMMU, vfio-pci)
@@ -85,19 +86,25 @@ openshift-ai-infrastructure/
 │   ├── 01-cuda-vectoradd.yaml             # Sanity check CUDA kernel execution pod
 │   ├── 02-exclusive-gpu-pod.yaml          # Dedicated GPU allocation pod (whole GPU)
 │   ├── 03-timesliced-gpu-pods.yaml        # Two concurrent pods sharing 1 GPU
-│   └── vllm/                              # Production vLLM LLM Inference Serving Engine
-│       ├── 00-namespace.yaml              # Dedicated namespace (llm-serving) & ServiceAccount
-│       ├── 01-rbac.yaml                   # SCC hostmount binding for local model cache
-│       ├── 02-storage.yaml                # PersistentVolume for Hugging Face model weight cache
-│       ├── 03-deployment.yaml             # GPU-accelerated vLLM OpenAI-compatible engine
-│       ├── 04-service.yaml                # Internal cluster service (port 8000)
-│       ├── 05-route.yaml                  # OpenShift Route with Edge TLS termination
-│       ├── 06-pdb.yaml                    # PodDisruptionBudget (minAvailable: 1)
-│       ├── 07-network-policy.yaml         # Ingress network isolation policy
-│       ├── monitoring/                    # SRE Observability & Alerts
-│       │   ├── prometheus-rules.yaml      # SRE alerts (latency P95, queue saturation, KV cache)
-│       │   └── service-monitor.yaml       # User Workload ServiceMonitor for vLLM metrics
-│       └── kustomization.yaml             # Declarative GitOps deployment bundle
+│   ├── vllm/                              # Production vLLM LLM Inference Serving Engine
+│   │   ├── 00-namespace.yaml              # Dedicated namespace (llm-serving) & ServiceAccount
+│   │   ├── 01-rbac.yaml                   # SCC hostmount binding for local model cache
+│   │   ├── 02-storage.yaml                # PersistentVolume for Hugging Face model weight cache
+│   │   ├── 03-deployment.yaml             # GPU-accelerated vLLM OpenAI-compatible engine
+│   │   ├── 04-service.yaml                # Internal cluster service (port 8000)
+│   │   ├── 05-route.yaml                  # OpenShift Route with Edge TLS termination
+│   │   ├── 06-pdb.yaml                    # PodDisruptionBudget (minAvailable: 1)
+│   │   ├── 07-network-policy.yaml         # Ingress network isolation policy
+│   │   ├── monitoring/                    # SRE Observability & Alerts
+│   │   │   ├── prometheus-rules.yaml      # SRE alerts (latency P95, queue saturation, KV cache)
+│   │   │   └── service-monitor.yaml       # User Workload ServiceMonitor for vLLM metrics
+│   │   └── kustomization.yaml             # Declarative GitOps deployment bundle
+│   └── rhoai-kserve/                      # Declarative OpenShift AI & KServe Serving Patterns
+│       ├── crds/                          # Portable CustomResourceDefinitions (ServingRuntime, InferenceService)
+│       ├── serving-runtime.yaml           # OpenShift AI vLLM ServingRuntime specification
+│       ├── inference-service.yaml         # KServe RawDeployment InferenceService
+│       ├── storage-connection.yaml        # Enterprise S3 model data connection secret
+│       └── kustomization.yaml             # Declarative KServe overlay bundle
 └── scripts/
     ├── gpu-troubleshoot.sh                # Automated diagnostic & health inspection tool
     ├── run-tests.sh                       # Local 5-suite pre-commit test runner
@@ -148,6 +155,10 @@ Query the OpenShift route, verify the active model, and benchmark token generati
   - 4-phase enterprise SRE roadmap: vLLM serving baseline, OpenShift AI & KServe declarative patterns, Linux systems engineering & Day-2 SRE operations, and multi-tenant GPU governance.
   - SRE productionalization: OpenShift User Workload Monitoring, Prometheus alerting rules, PodDisruptionBudgets, and incident post-mortems.
   - Hardware sizing, VRAM budgeting, and Day-2 operational runbooks.
+- **[Enterprise Model Serving Topologies](docs/model-serving-topologies.md)**: An architectural reference comparing:
+  - Standalone container deployments vs. KServe `RawDeployment` vs. Knative Serverless vs. ModelMesh.
+  - S3 model storage decoupling patterns and data connection secrets.
+  - SRE decision matrix for resource-constrained edge/SNO vs. enterprise datacenter clusters.
 - **[Kubernetes & OpenShift GPU Infrastructure Guide](docs/gpu-infrastructure-guide.md)**: A complete technical reference covering:
   - Why Kubernetes needs device plugins for GPUs.
   - Exclusive allocation vs. Time-Slicing vs. Multi-Instance GPU (MIG).
