@@ -30,9 +30,26 @@ To allow KVM/QEMU to seize exclusive control of the GPU without the host Linux d
 
 ---
 
-## 3. Libvirt Domain Attachment (`gpu-passthrough.tf`)
+## 3. Automated Host Lifecycle Tool (`scripts/gpu-prep-host.sh`)
 
-When launching or updating the OpenShift SNO VM in OpenTofu, include the PCI hostdev block:
+Instead of manually stopping systemd display services and unbinding kernel drivers, use the automated host lifecycle utility:
+
+```bash
+# 1. Non-destructively inspect host driver state, GPU processes, and VM attachment
+./scripts/gpu-prep-host.sh --check
+
+# 2. Automated complete onboarding (releases host display, binds to vfio-pci, and attaches to VM)
+./scripts/gpu-prep-host.sh --full-prep sno-node
+
+# 3. Restore GPU to host desktop & NoMachine when lab testing is finished
+./scripts/gpu-prep-host.sh --restore-host sno-node
+```
+
+---
+
+## 4. Libvirt Domain Attachment (`gpu-passthrough.tf`)
+
+When launching or updating the OpenShift SNO VM in OpenTofu or libvirt, the PCI hostdev blocks attach the card:
 
 ```xml
 <hostdev mode='subsystem' type='pci' managed='yes'>
@@ -41,6 +58,11 @@ When launching or updating the OpenShift SNO VM in OpenTofu, include the PCI hos
   </source>
   <rom bar='on'/>
 </hostdev>
+<hostdev mode='subsystem' type='pci' managed='yes'>
+  <source>
+    <address domain='0x0000' bus='0x03' slot='0x00' function='0x1'/>
+  </source>
+</hostdev>
 ```
 
-Once booted, the SNO node has native, direct access to the NVIDIA RTX 3060's 3,584 CUDA cores and 12GB GDDR6 VRAM with zero hypervisor virtualization overhead!
+Once booted or attached live, the SNO node has native, direct access to the NVIDIA RTX 3060's 3,584 CUDA cores and 12GB GDDR6 VRAM with zero hypervisor virtualization overhead!
