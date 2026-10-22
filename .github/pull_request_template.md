@@ -24,7 +24,7 @@ Relates to #
 
 <!-- Detail the steps taken to verify these changes. Include commands run, testbeds used, or paste relevant log excerpts. -->
 
-- **Target Environment:** <!-- e.g., Homelab T5600 VFIO GPU, Cisco Intersight DevNet Sandbox -->
+- **Target Environment:** <!-- e.g., Bare-Metal / KVM Host with VFIO GPU, Private Cloud -->
 - **Kubernetes / OpenShift Distribution:** <!-- e.g., SNO 4.22 on KVM, Bare-metal K8s -->
 - **GPU Component Tested:** <!-- e.g., GPU Operator, Time-Slicing, scripts/gpu-troubleshoot.sh -->
 - **Results / Output:**
