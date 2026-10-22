@@ -1,0 +1,13 @@
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  name: 99-master-hugepages
+  labels:
+    machineconfiguration.openshift.io/role: master
+spec:
+  # Allocates four 1GB Hugepages (4GB total) at boot time to minimize TLB misses
+  # and prevent memory fragmentation for high-throughput model tensor sharing.
+  kernelArguments:
+    - default_hugepagesz=1G
+    - hugepagesz=1G
+    - hugepages=4

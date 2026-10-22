@@ -256,3 +256,76 @@ def test_kustomize_build_rhoai_kserve():
 
     docs = list(yaml.safe_load_all(res.stdout))
     assert len(docs) == 3, f"Expected 3 resources in rhoai-kserve kustomize output, got {len(docs)}"
+
+
+def test_machineconfig_iommu_specs():
+    mc_path = os.path.join(REPO_ROOT, "operators", "machineconfig", "99-master-kernel-iommu.yaml")
+    manifest = load_yaml(mc_path)
+    assert manifest.get("kind") == "MachineConfig"
+    assert manifest.get("apiVersion") == "machineconfiguration.openshift.io/v1"
+    labels = manifest.get("metadata", {}).get("labels", {})
+    assert labels.get("machineconfiguration.openshift.io/role") == "master"
+
+    kernel_args = manifest.get("spec", {}).get("kernelArguments", [])
+    assert "intel_iommu=on" in kernel_args
+    assert "iommu=pt" in kernel_args
+
+
+def test_machineconfig_hugepages_specs():
+    mc_path = os.path.join(REPO_ROOT, "operators", "machineconfig", "99-master-hugepages.yaml")
+    manifest = load_yaml(mc_path)
+    assert manifest.get("kind") == "MachineConfig"
+    assert manifest.get("apiVersion") == "machineconfiguration.openshift.io/v1"
+    labels = manifest.get("metadata", {}).get("labels", {})
+    assert labels.get("machineconfiguration.openshift.io/role") == "master"
+
+    kernel_args = manifest.get("spec", {}).get("kernelArguments", [])
+    assert "default_hugepagesz=1G" in kernel_args
+    assert "hugepagesz=1G" in kernel_args
+    assert "hugepages=4" in kernel_args
+
+
+def test_kustomize_build_machineconfig():
+    mc_dir = os.path.join(REPO_ROOT, "operators", "machineconfig")
+    cmd = ["kubectl", "kustomize", mc_dir]
+    res = subprocess.run(cmd, capture_output=True, text=True)
+    assert res.returncode == 0, f"kubectl kustomize failed on {mc_dir}: {res.stderr}"
+
+    docs = list(yaml.safe_load_all(res.stdout))
+    assert len(docs) == 2, f"Expected 2 MachineConfig resources, got {len(docs)}"
+    names = [d["metadata"]["name"] for d in docs]
+    assert "99-master-kernel-iommu" in names
+    assert "99-master-hugepages" in names
+
+
+def test_post_mortem_and_runbook_integrity():
+    docs_to_check = [
+        (
+            os.path.join(REPO_ROOT, "docs", "post-mortems", "2026-10-21-cpu-jit-psu-deadlock.md"),
+            ["Root Cause Analysis", "5 Whys", "--enforce-eager", "Recreate", "Incident Timeline"],
+        ),
+        (
+            os.path.join(REPO_ROOT, "docs", "linux-kernel-and-hardware.md"),
+            ["PCIe Architecture", "IOMMU", "vfio-pci", "cgroups v2", "Hugepages"],
+        ),
+        (
+            os.path.join(REPO_ROOT, "docs", "runbooks", "gpu-recovery.md"),
+            ["Xid", "nvidia-smi", "PCIe", "Recovery", "Verification"],
+        ),
+        (
+            os.path.join(REPO_ROOT, "docs", "runbooks", "node-drain.md"),
+            ["--ignore-daemonsets", "--delete-emptydir-data", "PodDisruptionBudget", "Cordon"],
+        ),
+        (
+            os.path.join(REPO_ROOT, "docs", "runbooks", "driver-upgrade.md"),
+            ["ClusterPolicy", "NVIDIA GPU Operator", "Rollout", "Rollback"],
+        ),
+    ]
+
+    for file_path, required_terms in docs_to_check:
+        assert os.path.exists(file_path), f"Required documentation file missing: {file_path}"
+        assert os.path.getsize(file_path) > 500, f"Documentation file is unexpectedly small: {file_path}"
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+            for term in required_terms:
+                assert term in content, f"Term '{term}' missing from {file_path}"
