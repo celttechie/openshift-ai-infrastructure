@@ -6,15 +6,15 @@
 
 import json
 import os
-import sys
-import time
 import subprocess
-import glob
+import time
 
 ACTION_FILE = "/home/bjarrett/admin_tools/action.json"
 
+
 def log(msg):
     print(msg, flush=True)
+
 
 def run(cmd, timeout=15):
     try:
@@ -24,12 +24,14 @@ def run(cmd, timeout=15):
         log(f"Warning: command timed out after {timeout}s: {cmd}")
         return subprocess.CompletedProcess(cmd, returncode=124, stdout="", stderr="Timed out")
 
+
 def write_sysfs(path, content, timeout=5):
     if not os.path.exists(path):
         return False
     cmd = f"printf '%s\\n' '{content}' > '{path}'"
     res = run(cmd, timeout=timeout)
     return res.returncode == 0
+
 
 def get_action():
     if os.path.exists(ACTION_FILE):
@@ -41,13 +43,16 @@ def get_action():
             pass
     return "check"
 
+
 def do_check():
-    driver_vga = run("lspci -nnk -s 03:00.0 | grep 'Kernel driver in use' | awk '{print $5}'").stdout.strip() or "none"
-    driver_audio = run("lspci -nnk -s 03:00.1 | grep 'Kernel driver in use' | awk '{print $5}'").stdout.strip() or "none"
+    cmd_vga = "lspci -nnk -s 03:00.0 | grep 'Kernel driver in use' | awk '{print $5}'"
+    cmd_audio = "lspci -nnk -s 03:00.1 | grep 'Kernel driver in use' | awk '{print $5}'"
+    driver_vga = run(cmd_vga).stdout.strip() or "none"
+    driver_audio = run(cmd_audio).stdout.strip() or "none"
     procs = run("fuser /dev/nvidia* /dev/dri/* 2>/dev/null").stdout.strip()
     dm_active = run("systemctl is-active lightdm.service 2>/dev/null").stdout.strip()
     nx_active = run("systemctl is-active nxserver.service 2>/dev/null").stdout.strip()
-    
+
     result = {
         "vga_driver": driver_vga,
         "audio_driver": driver_audio,
@@ -58,11 +63,12 @@ def do_check():
     }
     log(json.dumps(result, indent=2))
 
+
 def do_bind_vfio():
     log("[1/4] Stopping display manager and NoMachine...")
     run("systemctl stop lightdm.service nxserver.service 2>&1")
     time.sleep(2)
-    
+
     log("[2/4] Terminating dangling GPU processes...")
     run("fuser -k -9 /dev/nvidia* /dev/dri/* 2>&1")
     time.sleep(1)
@@ -85,6 +91,7 @@ def do_bind_vfio():
     driver_vga = run("lspci -nnk -s 03:00.0 | grep 'Kernel driver in use' | awk '{print $5}'").stdout.strip()
     log(f"Status: GPU VGA driver is now '{driver_vga}'")
 
+
 def do_restore_host():
     log("[1/4] Unbinding from vfio-pci...")
     vga_dev = "/sys/bus/pci/devices/0000:03:00.0"
@@ -106,6 +113,7 @@ def do_restore_host():
     run("systemctl restart lightdm.service nxserver.service 2>&1")
     driver_vga = run("lspci -nnk -s 03:00.0 | grep 'Kernel driver in use' | awk '{print $5}'").stdout.strip()
     log(f"Status: GPU VGA driver is now '{driver_vga}'")
+
 
 if __name__ == '__main__':
     act = get_action()

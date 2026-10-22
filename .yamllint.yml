@@ -1,0 +1,19 @@
+---
+extends: default
+
+rules:
+  document-start: disable
+  line-length:
+    max: 180
+    level: warning
+  truthy: disable
+  indentation:
+    spaces: 2
+    indent-sequences: consistent
+  comments:
+    min-spaces-from-content: 1
+    require-starting-space: false
+
+ignore:
+  - ".venv/"
+  - ".git/"

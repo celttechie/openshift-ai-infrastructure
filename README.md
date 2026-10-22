@@ -146,6 +146,32 @@ Query the OpenShift route, verify the active model, and benchmark token generati
 
 ---
 
-## 6. License
+## 6. Testing & CI/CD Guardrails
+
+The repository enforces enterprise quality and safety guardrails across manifests, host automation tools, and workloads.
+
+### Automated Test Layers
+* **Static Manifest Linting (`yamllint`)**: Enforces clean Kubernetes formatting across `operators/` and `workloads/`.
+* **Python Code Quality (`flake8`)**: Ensures PEP 8 compliance for hypervisor admin tools.
+* **Shell Automation Analysis (`shellcheck`)**: Analyzes shell scripts for bash safety, unquoted variables, and robust error handling.
+* **Unit Tests & Policy Guardrails (`pytest`)**:
+  * Unit tests hypervisor action dispatching (`gpu-host-admin.py`) using mocked state machines.
+  * Validates AI architectural rules (e.g. `--enforce-eager` presence, `nvidia.com/gpu` requests/limits, `/dev/shm` memory mounts, `Recreate` deployment strategies, and health probes).
+* **Kustomize Build & Schema Validation**: Ensures declarative overlays compile cleanly with `kubectl kustomize`.
+
+### Running Tests Locally
+A virtual environment (`.venv`) is automatically managed:
+```bash
+# Run the complete test suite locally
+./scripts/run-tests.sh
+```
+
+### GitHub Actions CI
+All tests run automatically on every pull request and push to `main` via [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+
+---
+
+## 7. License
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
+
