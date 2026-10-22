@@ -5,12 +5,12 @@
 [![OpenTofu](https://img.shields.io/badge/IaC-OpenTofu-blueviolet.svg?style=flat-square&logo=opentofu)](https://opentofu.org/)
 [![Kubernetes](https://img.shields.io/badge/Platform-Kubernetes%20%7C%20OpenShift-326CE5.svg?style=flat-square&logo=kubernetes)](https://kubernetes.io/)
 [![NVIDIA GPU Operator](https://img.shields.io/badge/Accelerators-NVIDIA%20GPU%20Operator-76B900.svg?style=flat-square&logo=nvidia)](https://github.com/NVIDIA/gpu-operator)
-[![Cisco Intersight](https://img.shields.io/badge/Compute-Cisco%20UCS%20%7C%20Intersight-049fd9.svg?style=flat-square&logo=cisco)](https://intersight.com)
+[![Linux SRE](https://img.shields.io/badge/SRE-Linux%20%7C%20Kernel%20%7C%20Automation-FCC624.svg?style=flat-square&logo=linux&logoColor=black)](docs/ai-workloads-roadmap.md)
 
-A community-oriented, open-source reference platform and lab for learning, deploying, and troubleshooting **Kubernetes and OpenShift AI Infrastructure**, with support for:
-1. **On-Prem Homelab GPU Passthrough** (Dell Precision T5600 + NVIDIA RTX 3060).
-2. **Cisco Intersight DevNet Sandbox** (Declarative Cisco UCS AI Server Profiles as code).
-3. **NVIDIA GPU Operator & Resource Scheduling** (Exclusive access, Time-Slicing multi-tenancy, and diagnostics).
+A hands-on demo, test, and research project for **Kubernetes and OpenShift AI Infrastructure**, designed to explore unfamiliar hardware and acceleration technologies, stand them up from scratch on real-world systems, and systematically apply Site Reliability Engineering (SRE) principles:
+1. **Bare-Metal & Hypervisor GPU Passthrough** (PCIe VFIO driver binding, IOMMU isolation, and host automation).
+2. **NVIDIA GPU Operator & Resource Scheduling** (Exclusive compute, Time-Slicing multi-tenancy, and health diagnostics).
+3. **Production Model Serving & SRE Hardening** (OpenAI-compatible vLLM serving, OpenShift Route TLS, Prometheus monitoring, and Disruption Budgets).
 
 ---
 
@@ -18,41 +18,47 @@ A community-oriented, open-source reference platform and lab for learning, deplo
 
 ```mermaid
 flowchart TD
-    subgraph Targets["Supported Infrastructure Targets"]
-        T1["Target A: Homelab (Dell Precision T5600)<br>PCIe VFIO Passthrough (NVIDIA RTX 3060)"]
-        T2["Target B: Cisco Intersight Sandbox<br>Declarative UCS AI Server Profiles as Code"]
+    subgraph HostLayer["Bare-Metal / Virtualized Host Infrastructure"]
+        HW["Host Compute (Dual Xeon, 64GB ECC RAM)<br>PCIe VFIO Passthrough (NVIDIA RTX 3060 12GB)"]
+        SYS["Linux Kernel Subsystem<br>IOMMU Isolation • vfio-pci • sysfs overrides"]
+        HW --- SYS
     end
 
-    subgraph Platform["Kubernetes / OpenShift Core"]
-        K8S["OpenShift Container Platform / Kubernetes Node"]
+    subgraph Platform["Red Hat OpenShift / Kubernetes Core"]
+        SNO["OpenShift Node (RHCOS / CRI-O)<br>Device Plugins & Kernel Hooks"]
     end
 
     subgraph WorkloadLayer["AI & GPU Scheduling Engine"]
         OP["NVIDIA GPU Operator"]
         SCHED["GPU Scheduler & Extended Resources<br>(nvidia.com/gpu)"]
         TS["Time-Slicing Configuration (ConfigMap)<br>1 Physical GPU -> 4 Virtual Slices"]
-        PODS["AI Workloads (CUDA Sanity & Model Serving)"]
+        VLLM["vLLM Inference Engine<br>(Qwen2.5 / Llama 3 • PagedAttention)"]
+        INGRESS["OpenShift Route (Edge TLS Termination)<br>ClusterIP Service (Port 8000)"]
+        OBS["SRE Observability<br>DCGM Exporter • vLLM Metrics • Prometheus Alerts"]
         DIAG["Automated GPU Troubleshooting Suite"]
 
         OP --> SCHED
         SCHED --> TS
-        TS --> PODS
+        TS --> VLLM
+        VLLM --> INGRESS
         SCHED --> DIAG
+        VLLM --> OBS
     end
 
-    T1 --> K8S
-    T2 -.->|"UCS Bare-Metal Fabric"| K8S
-    K8S --> WorkloadLayer
+    SYS --> SNO
+    SNO --> WorkloadLayer
 ```
 
 ---
 
-## 2. Supported Target Environments
+## 2. Infrastructure & Target Architecture
 
-| Target | Hardware Required | Purpose & Capabilities |
+| Component | Technology | Purpose & Capabilities |
 | :--- | :--- | :--- |
-| **`targets/t5600-homelab`** | Precision T5600 KVM Host + NVIDIA GPU | Native PCIe VFIO passthrough directly into OpenShift for true physical CUDA acceleration |
-| **`targets/cisco-intersight`** | None (Free Cisco DevNet Sandbox) | Declarative OpenTofu modeling of Cisco UCS X-Series/C-Series AI Server Profiles, BIOS tuning, and RoCEv2 fabrics |
+| **Host Hypervisor / Bare-Metal** | Linux KVM / Libvirt (`targets/t5600-homelab`) | Native PCIe VFIO passthrough directly into OpenShift for physical CUDA acceleration |
+| **Kubernetes Platform** | Red Hat OpenShift / Kubernetes | Enterprise container orchestration, custom SCC security boundaries, and Edge TLS routing |
+| **GPU Operator** | NVIDIA GPU Operator (`operators/nvidia-gpu-operator`) | Automated driver injection, Container Device Interface (CDI), and DCGM telemetry |
+| **Serving Runtime** | vLLM Engine (`workloads/vllm`) | OpenAI-compatible high-throughput inference serving with continuous batching and PagedAttention |
 
 ---
 
@@ -60,19 +66,15 @@ flowchart TD
 
 ```
 openshift-ai-infrastructure/
-├── README.md                              # Main portfolio documentation & architectural guide
+├── README.md                              # Main architecture & research testbed guide
 ├── docs/
-│   ├── ai-workloads-roadmap.md            # Enterprise AI workloads, LLM serving & RAG roadmap
+│   ├── ai-workloads-roadmap.md            # Applied SRE roadmap, milestones & research objectives
 │   └── gpu-infrastructure-guide.md       # Technical guide on GPU scheduling & failure modes
 ├── targets/
-│   ├── t5600-homelab/                     # Homelab PCIe VFIO GPU Passthrough
-│   │   ├── README.md                      # Host configuration runbook (IOMMU, vfio-pci)
-│   │   └── gpu-passthrough.tf             # Libvirt XML hostdev attachment module
-│   └── cisco-intersight/                  # Cisco DevNet Intersight UCS AI Profiles
-│       ├── README.md                      # Free DevNet Sandbox setup guide
-│       ├── main.tf / versions.tf          # Provider setup (CiscoDevNet/intersight)
-│       ├── policies.tf                    # Low-latency AI BIOS and GPU policies
-│       └── server_profile.tf              # Declarative UCS AI Server Profile
+│   └── t5600-homelab/                     # Host PCIe VFIO GPU Passthrough
+│       ├── README.md                      # Host configuration runbook (IOMMU, vfio-pci)
+│       ├── gpu-host-admin.py              # Automated host VFIO binding state-machine
+│       └── gpu-passthrough.tf             # Libvirt XML hostdev attachment module
 ├── operators/
 │   └── nvidia-gpu-operator/               # GPU Operator Lifecycle
 │       ├── cluster-policy.yaml            # ClusterPolicy with CRI-O and DCGM enabled
@@ -91,7 +93,9 @@ openshift-ai-infrastructure/
 │       └── kustomization.yaml             # Declarative GitOps deployment bundle
 └── scripts/
     ├── gpu-troubleshoot.sh                # Automated diagnostic & health inspection tool
+    ├── run-tests.sh                       # Local 5-suite pre-commit test runner
     └── test-vllm-endpoint.sh              # vLLM endpoint tester & throughput benchmark
+```
 
 ---
 
@@ -133,16 +137,16 @@ Query the OpenShift route, verify the active model, and benchmark token generati
 
 ## 5. Architectural & Technical Guides
 
-- **[AI Workloads & LLM Infrastructure Roadmap](docs/ai-workloads-roadmap.md)**: A complete milestone implementation plan covering:
-  - 4-phase enterprise roadmap: vLLM serving, Red Hat OpenShift AI (RHOAI), Private RAG, and time-slicing micro-services.
-  - Alignment with Cisco AI partnerships, Cisco Validated Designs (CVDs), and on-prem enterprise architectures.
-  - Hardware sizing, VRAM budgeting, and verification checklists.
+- **[OpenShift AI Infrastructure & Production SRE Roadmap](docs/ai-workloads-roadmap.md)**: A complete milestone implementation plan covering:
+  - 4-phase enterprise SRE roadmap: vLLM serving baseline, OpenShift AI & KServe declarative patterns, Linux systems engineering & Day-2 SRE operations, and multi-tenant GPU governance.
+  - SRE productionalization: OpenShift User Workload Monitoring, Prometheus alerting rules, PodDisruptionBudgets, and incident post-mortems.
+  - Hardware sizing, VRAM budgeting, and Day-2 operational runbooks.
 - **[Kubernetes & OpenShift GPU Infrastructure Guide](docs/gpu-infrastructure-guide.md)**: A complete technical reference covering:
   - Why Kubernetes needs device plugins for GPUs.
   - Exclusive allocation vs. Time-Slicing vs. Multi-Instance GPU (MIG).
   - Taints, tolerations, and node protection.
   - The top 5 real-world GPU failure modes and exact troubleshooting commands.
-  - How Cisco UCS hardware policies map to Kubernetes compute nodes.
+  - How enterprise bare-metal hardware and BIOS policies map to Kubernetes compute nodes.
 
 ---
 

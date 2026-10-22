@@ -66,7 +66,7 @@ Instead of manually compiling Linux kernel drivers and installing CUDA toolkits 
 | :--- | :--- | :--- | :--- |
 | **Exclusive (Whole GPU)** | All NVIDIA GPUs | Complete | Heavy model training, Large LLMs (70B+), low-latency production serving |
 | **Time-Slicing (Sharing)** | All NVIDIA GPUs (Consumer & Enterprise) | Software-level (no VRAM isolation) | Dev/test environments, homelabs, lightweight inference (multiple models sharing 1 GPU) |
-| **Multi-Instance GPU (MIG)** | Enterprise Only (A100, A30, H100, B200) | Full Hardware Isolation (Dedicated compute cores, memory, and cache) | Multi-tenant enterprise clusters (e.g. Cisco UCS / NVIDIA DGX SuperPODs) |
+| **Multi-Instance GPU (MIG)** | Enterprise Only (A100, A30, H100, B200) | Full Hardware Isolation (Dedicated compute cores, memory, and cache) | Multi-tenant enterprise clusters (e.g. enterprise rack clusters / NVIDIA DGX SuperPODs) |
 
 ### A. Exclusive Allocation Example
 A pod requests a whole GPU. Kubernetes ensures no other container can touch it:
@@ -156,12 +156,12 @@ Because GPU nodes are specialized and often expensive, you must prevent standard
 
 ---
 
-## 6. Enterprise Hardware Alignment: Cisco UCS & Intersight
+## 6. Enterprise Hardware Alignment: Bare-Metal Server Profiles as Code
 
-When deploying this in enterprise environments like Cisco:
-- **Cisco UCS (Unified Computing System)** abstracts physical rack servers (C-Series) and modular blade chassis (X-Series) into software-defined **Server Profiles**.
+When deploying GPU infrastructure in enterprise datacenters:
+- **Software-Defined Bare Metal** abstracts physical rack servers and modular compute nodes into declarative **Server Profiles**.
 - Instead of manually setting BIOS flags or wiring cables:
-  1. An Intersight **GPU Policy** assigns PCIe slots to compute nodes.
-  2. A **BIOS Policy** enables SR-IOV, NUMA node interleaving, and PCIe Gen5 bifurcation.
-  3. A **Network Policy** configures Cisco Virtual Interface Cards (VICs) with RoCEv2 (RDMA) for high-speed inter-node tensor communication between DGX nodes.
-- Once Intersight provisions the physical node, Kubernetes/OpenShift boots up and the NVIDIA GPU Operator takes over at the software layer.
+  1. A **GPU / PCIe Policy** maps PCIe slots, bifurcation, and power envelopes to target compute nodes.
+  2. A **BIOS Policy** enables IOMMU, SR-IOV, NUMA node interleaving, and maximum performance P-states.
+  3. A **Network Policy** configures high-speed virtual interface cards with RoCEv2 (RDMA) for inter-node tensor communication.
+- Once the physical node is provisioned, Kubernetes/OpenShift boots up and the NVIDIA GPU Operator takes over at the container orchestration layer.
