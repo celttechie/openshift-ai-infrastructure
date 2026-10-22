@@ -126,6 +126,11 @@ do_attach_vm() {
     return 0
   fi
 
+  local live_flag=""
+  if virsh -c "${LIBVIRT_URI}" domstate "${domain}" 2>/dev/null | grep -q "running"; then
+    live_flag="--live"
+  fi
+
   # Create device XMLs on hypervisor
   ssh "${REMOTE_HOST}" "cat <<'EOF' > /tmp/gpu_vga.xml
 <hostdev mode='subsystem' type='pci' managed='yes'>
@@ -142,8 +147,8 @@ cat <<'EOF' > /tmp/gpu_audio.xml
   </source>
 </hostdev>
 EOF
-virsh -c qemu:///system attach-device '${domain}' /tmp/gpu_vga.xml --live --config
-virsh -c qemu:///system attach-device '${domain}' /tmp/gpu_audio.xml --live --config
+virsh -c qemu:///system attach-device '${domain}' /tmp/gpu_vga.xml ${live_flag} --config
+virsh -c qemu:///system attach-device '${domain}' /tmp/gpu_audio.xml ${live_flag} --config
 "
   echo -e "[${GREEN}SUCCESS${NC}] Successfully attached GPU (VGA + Audio) to '${domain}'."
 }
@@ -155,8 +160,12 @@ do_restore_host() {
   # Detach from VM if attached
   if check_libvirt_attached "${domain}"; then
     echo "Detaching PCIe hostdev from '${domain}' in libvirt..."
-    ssh "${REMOTE_HOST}" "virsh -c qemu:///system detach-device '${domain}' /tmp/gpu_vga.xml --live --config 2>/dev/null || true
-virsh -c qemu:///system detach-device '${domain}' /tmp/gpu_audio.xml --live --config 2>/dev/null || true"
+    local live_flag=""
+    if virsh -c "${LIBVIRT_URI}" domstate "${domain}" 2>/dev/null | grep -q "running"; then
+      live_flag="--live"
+    fi
+    ssh "${REMOTE_HOST}" "virsh -c qemu:///system detach-device '${domain}' /tmp/gpu_vga.xml ${live_flag} --config 2>/dev/null || true
+virsh -c qemu:///system detach-device '${domain}' /tmp/gpu_audio.xml ${live_flag} --config 2>/dev/null || true"
   fi
 
   exec_host_action "restore_host"
