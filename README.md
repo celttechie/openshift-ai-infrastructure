@@ -70,13 +70,24 @@ openshift-ai-infrastructure/
 ├── docs/
 │   ├── ai-workloads-roadmap.md            # Applied SRE roadmap, milestones & research objectives
 │   ├── gpu-infrastructure-guide.md       # Technical guide on GPU scheduling & failure modes
-│   └── model-serving-topologies.md        # Architecture guide: RawDeployment vs Serverless vs ModelMesh
+│   ├── linux-kernel-and-hardware.md       # Systems guide: PCIe, IOMMU, VFIO, cgroups v2, Hugepages
+│   ├── model-serving-topologies.md        # Architecture guide: RawDeployment vs Serverless vs ModelMesh
+│   ├── post-mortems/                      # SRE Incident Post-Mortems & Root Cause Analyses
+│   │   └── 2026-10-21-cpu-jit-psu-deadlock.md # Incident 001: Xeon E5 JIT power-trip & SNO scheduling deadlock
+│   └── runbooks/                          # Day-2 SRE Operational Runbooks
+│       ├── driver-upgrade.md              # Runbook 3: NVIDIA Driver & Operator Version Upgrade
+│       ├── gpu-recovery.md                # Runbook 1: GPU Hardware Hang & PCIe Bus Reset Procedure
+│       └── node-drain.md                  # Runbook 2: Node Drain & GPU Workload Evacuation Procedure
 ├── targets/
 │   └── t5600-homelab/                     # Host PCIe VFIO GPU Passthrough
 │       ├── README.md                      # Host configuration runbook (IOMMU, vfio-pci)
 │       ├── gpu-host-admin.py              # Automated host VFIO binding state-machine
 │       └── gpu-passthrough.tf             # Libvirt XML hostdev attachment module
 ├── operators/
+│   ├── machineconfig/                     # Declarative RHCOS OS & Kernel Configurations
+│   │   ├── 99-master-hugepages.yaml       # 1GB Hugepages boot-time reservation (default_hugepagesz=1G)
+│   │   ├── 99-master-kernel-iommu.yaml    # Declarative IOMMU passthrough args (intel_iommu=on iommu=pt)
+│   │   └── kustomization.yaml             # Kustomize bundle for MachineConfigs
 │   ├── monitoring/                        # Platform Observability
 │   │   └── cluster-monitoring-config.yaml # ConfigMap enabling OpenShift User Workload Monitoring
 │   └── nvidia-gpu-operator/               # GPU Operator Lifecycle
@@ -151,6 +162,19 @@ Query the OpenShift route, verify the active model, and benchmark token generati
 
 ## 5. Architectural & Technical Guides
 
+- **[Incident Post-Mortem 001: Hardware Power-Trip & Scheduling Deadlock](docs/post-mortems/2026-10-21-cpu-jit-psu-deadlock.md)**: A blameless SRE post-mortem analyzing:
+  - Root cause of real-world Dell T5600 PSU over-current tripping under dual Xeon E5-2670 v1 non-AVX2 Inductor JIT + RTX 3060 CUDA graph capture.
+  - SNO single-GPU `RollingUpdate` resource allocation deadlock mechanics.
+  - Permanent mitigations via `--enforce-eager`, `strategy: Recreate`, and CI policy guardrails.
+- **[Linux Systems Engineering: Hardware, Kernel & Virtualization Guide](docs/linux-kernel-and-hardware.md)**: A deep-dive guide covering:
+  - PCIe Root Complex, Access Control Services (ACS), and IOMMU grouping rules.
+  - Dynamic VFIO driver binding and sysfs driver overrides (`driver_override`).
+  - cgroups v2 eBPF device controllers, Container Device Interface (CDI), and host RAM vs. GPU VRAM accounting.
+  - Dual-socket NUMA topologies and 1GB Hugepages optimization for large language models.
+- **[Day-2 SRE Operational Runbooks](docs/runbooks/)**:
+  - **[GPU Hardware Hang & PCIe Bus Reset](docs/runbooks/gpu-recovery.md)**: Diagnostic matrix for NVIDIA Xid errors (31, 45, 62, 79), sysfs PCIe bus removal/rescan, and driver module reload procedures.
+  - **[Node Drain & Workload Evacuation](docs/runbooks/node-drain.md)**: Overcoming DaemonSet, `/dev/shm` emptyDir, and PodDisruptionBudget eviction blockers during host maintenance.
+  - **[NVIDIA Driver & Operator Upgrade](docs/runbooks/driver-upgrade.md)**: Declarative `ClusterPolicy` updates, containerized driver compilation across RHCOS kernel pivots, and emergency rollback.
 - **[OpenShift AI Infrastructure & Production SRE Roadmap](docs/ai-workloads-roadmap.md)**: A complete milestone implementation plan covering:
   - 4-phase enterprise SRE roadmap: vLLM serving baseline, OpenShift AI & KServe declarative patterns, Linux systems engineering & Day-2 SRE operations, and multi-tenant GPU governance.
   - SRE productionalization: OpenShift User Workload Monitoring, Prometheus alerting rules, PodDisruptionBudgets, and incident post-mortems.

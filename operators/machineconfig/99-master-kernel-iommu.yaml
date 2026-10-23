@@ -1,0 +1,13 @@
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  name: 99-master-kernel-iommu
+  labels:
+    machineconfiguration.openshift.io/role: master
+spec:
+  # In Single Node OpenShift (SNO), the control-plane node holds the 'master' role
+  # and also runs worker workloads. The Machine Config Operator (MCO) automatically
+  # applies these kernel arguments to GRUB via 'grubby' and coordinates a graceful node reboot.
+  kernelArguments:
+    - intel_iommu=on
+    - iommu=pt

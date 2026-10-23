@@ -85,8 +85,10 @@ fi
 
 # Step 5: Kustomize Manifest Compilation
 echo -e "\n${BOLD}[5/${TOTAL_STEPS}] Validating Kustomize Manifest Builds...${NC}"
-if kubectl kustomize workloads/vllm > /dev/null && kubectl kustomize workloads/rhoai-kserve > /dev/null; then
-  echo -e "  [${GREEN}PASS${NC}] workloads/vllm & workloads/rhoai-kserve Kustomize bundles compiled successfully."
+if kubectl kustomize workloads/vllm > /dev/null && \
+   kubectl kustomize workloads/rhoai-kserve > /dev/null && \
+   kubectl kustomize operators/machineconfig > /dev/null; then
+  echo -e "  [${GREEN}PASS${NC}] workloads/vllm, workloads/rhoai-kserve & operators/machineconfig bundles compiled successfully."
   PASSED_STEPS=$((PASSED_STEPS + 1))
 else
   echo -e "  [${RED}FAIL${NC}] kubectl kustomize failed to compile manifests."

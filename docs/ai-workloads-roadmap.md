@@ -59,7 +59,7 @@ graph TD
 ## 3. Four Core SRE Production Milestones
 
 ### Milestone 1: High-Throughput Inference Baseline & SRE Production Hardening
-* **Status**: **Baseline Complete (PR #3 Merged); SRE Hardening In Progress**
+* **Status**: **Complete (PR #5 Merged)**
 * **Objective**: Establish the core OpenAI-compatible vLLM serving engine on SNO and harden it with enterprise SRE guardrails.
 * **Core Inference Deliverables**:
   * [x] Namespace and RBAC manifests with OpenShift SCC bindings (`workloads/vllm/00-namespace.yaml`, `01-rbac.yaml`).
@@ -73,12 +73,12 @@ graph TD
   * [x] **Workload Resilience**: Implement `PodDisruptionBudget` (`minAvailable: 1`) in `workloads/vllm/06-pdb.yaml` and configure `terminationGracePeriodSeconds: 60` for graceful in-flight request draining.
   * [x] **Network Isolation**: Implement OpenShift `NetworkPolicy` restricting ingress to authorized OpenShift routers and Prometheus monitoring pods (`workloads/vllm/07-network-policy.yaml`).
   * [x] **Policy Guardrail & Unit Tests**: Automated pytest suite validating termination grace periods, PDB constraints, alerting rules, and Kustomize build (`tests/test_manifest_policies.py`).
-  * [ ] **Security Posture Review**: Scope SCC permissions from broad `privileged` access toward specific Linux capabilities (`IPC_LOCK`, `SYS_PTRACE`).
+  * [x] **Security Posture Review**: Scope SCC permissions from broad `privileged` access toward specific Linux capabilities (`IPC_LOCK`, `SYS_PTRACE`).
 
 ---
 
 ### Milestone 2: Declarative OpenShift AI (RHOAI) & KServe ServingRuntime Patterns
-* **Status**: **Complete (PR Open)**
+* **Status**: **Complete (PR #6 Merged)**
 * **Objective**: Deliver enterprise OpenShift AI / KServe declarative serving patterns without the cluster footprint of full upstream Open Data Hub (ODH) on resource-constrained SNO.
 * **Architecture Strategy**:
   * Avoid installing the full heavy RHOAI operator bundle (which consumes >16GB RAM for Kubeflow, Elyra, Dashboard, and Knative components).
@@ -94,16 +94,16 @@ graph TD
 ---
 
 ### Milestone 3: Linux Systems Engineering, Day-2 SRE Operations & Post-Mortems
-* **Status**: **Planned**
+* **Status**: **Complete (PR Open)**
 * **Objective**: Demonstrate deep Linux kernel troubleshooting, immutable OS awareness (RHCOS), and production incident resolution.
 * **Deliverables**:
-  * [ ] **Incident Post-Mortem 001**: Document the real-world Xeon E5 JIT power-trip incident (`docs/post-mortems/2026-10-21-cpu-jit-psu-deadlock.md`):
+  * [x] **Incident Post-Mortem 001**: Document the real-world Xeon E5 JIT power-trip incident (`docs/post-mortems/2026-10-21-cpu-jit-psu-deadlock.md`):
     * Summary, Timeline, Impact, and Root Cause Analysis (RCA).
     * Deep-dive: PyTorch Inductor thread exhaustion + AVX2 absence + GPU peak draw triggering hardware PSU shutdown.
     * Permanent engineering fixes: `--enforce-eager` and `strategy: Recreate`.
-  * [ ] **Linux Hardware & Kernel Guide**: Detailed technical notes on PCIe passthrough, IOMMU grouping, sysfs driver overrides, and cgroups v2 GPU accounting (`docs/linux-kernel-and-hardware.md`).
-  * [ ] **RHCOS MachineConfig Concepts**: Examples of how OpenShift applies immutable kernel arguments (`intel_iommu=on`, `hugepages=1G`) via MachineConfig operator.
-  * [ ] **Day-2 SRE Operational Runbooks**:
+  * [x] **Linux Hardware & Kernel Guide**: Detailed technical notes on PCIe passthrough, IOMMU grouping, sysfs driver overrides, and cgroups v2 GPU accounting (`docs/linux-kernel-and-hardware.md`).
+  * [x] **RHCOS MachineConfig Declarations**: Examples of how OpenShift applies immutable kernel arguments (`intel_iommu=on`, `hugepages=1G`) via MachineConfig operator (`operators/machineconfig/`).
+  * [x] **Day-2 SRE Operational Runbooks**:
     * Runbook 1: GPU Hardware Hang & VFIO Reset Procedure (`docs/runbooks/gpu-recovery.md`).
     * Runbook 2: Node Drain & GPU Workload Evacuation Procedure (`docs/runbooks/node-drain.md`).
     * Runbook 3: NVIDIA Driver & Operator Version Upgrade Procedure (`docs/runbooks/driver-upgrade.md`).
