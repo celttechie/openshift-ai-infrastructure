@@ -73,7 +73,7 @@ openshift-ai-infrastructure/
 │   ├── linux-kernel-and-hardware.md       # Systems guide: PCIe, IOMMU, VFIO, cgroups v2, Hugepages
 │   ├── model-serving-topologies.md        # Architecture guide: RawDeployment vs Serverless vs ModelMesh
 │   ├── post-mortems/                      # SRE Incident Post-Mortems & Root Cause Analyses
-│   │   └── 2026-10-21-cpu-jit-psu-deadlock.md # Incident 001: Xeon E5 JIT power-trip & SNO scheduling deadlock
+│   │   └── 2026-10-21-kernel-lockup-gpu-scheduling-deadlock.md # Incident 001: Hypervisor kernel deadlock & SNO GPU scheduling lockup
 │   └── runbooks/                          # Day-2 SRE Operational Runbooks
 │       ├── driver-upgrade.md              # Runbook 3: NVIDIA Driver & Operator Version Upgrade
 │       ├── gpu-recovery.md                # Runbook 1: GPU Hardware Hang & PCIe Bus Reset Procedure
@@ -162,10 +162,11 @@ Query the OpenShift route, verify the active model, and benchmark token generati
 
 ## 5. Architectural & Technical Guides
 
-- **[Incident Post-Mortem 001: Hardware Power-Trip & Scheduling Deadlock](docs/post-mortems/2026-10-21-cpu-jit-psu-deadlock.md)**: A blameless SRE post-mortem analyzing:
-  - Root cause of real-world Dell T5600 PSU over-current tripping under dual Xeon E5-2670 v1 non-AVX2 Inductor JIT + RTX 3060 CUDA graph capture.
+- **[Incident Post-Mortem 001: Host Kernel Mutex Deadlock & GPU Scheduling Lockup](docs/post-mortems/2026-10-21-kernel-lockup-gpu-scheduling-deadlock.md)**: A blameless SRE post-mortem analyzing:
+  - Root cause of Linux kernel `console_lock` AB-BA deadlock in `TASK_UNINTERRUPTIBLE` (`D` state) during automated GPU sysfs unbinding and DRM driver initialization.
+  - Compute saturation from PyTorch Inductor unvectorized JIT compilation on dual non-AVX2 Xeon E5-2670 v1 processors.
   - SNO single-GPU `RollingUpdate` resource allocation deadlock mechanics.
-  - Permanent mitigations via `--enforce-eager`, `strategy: Recreate`, and CI policy guardrails.
+  - Permanent mitigations via sanitized `gpu-host-admin.py`, `--enforce-eager`, `strategy: Recreate`, and CI policy guardrails.
 - **[Linux Systems Engineering: Hardware, Kernel & Virtualization Guide](docs/linux-kernel-and-hardware.md)**: A deep-dive guide covering:
   - PCIe Root Complex, Access Control Services (ACS), and IOMMU grouping rules.
   - Dynamic VFIO driver binding and sysfs driver overrides (`driver_override`).

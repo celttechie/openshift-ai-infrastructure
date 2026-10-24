@@ -301,7 +301,7 @@ def test_kustomize_build_machineconfig():
 def test_post_mortem_and_runbook_integrity():
     docs_to_check = [
         (
-            os.path.join(REPO_ROOT, "docs", "post-mortems", "2026-10-21-cpu-jit-psu-deadlock.md"),
+            os.path.join(REPO_ROOT, "docs", "post-mortems", "2026-10-21-kernel-lockup-gpu-scheduling-deadlock.md"),
             ["Root Cause Analysis", "5 Whys", "--enforce-eager", "Recreate", "Incident Timeline"],
         ),
         (
