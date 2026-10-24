@@ -97,10 +97,10 @@ graph TD
 * **Status**: **Complete (PR Open)**
 * **Objective**: Demonstrate deep Linux kernel troubleshooting, immutable OS awareness (RHCOS), and production incident resolution.
 * **Deliverables**:
-  * [x] **Incident Post-Mortem 001**: Document the real-world Xeon E5 JIT power-trip incident (`docs/post-mortems/2026-10-21-cpu-jit-psu-deadlock.md`):
+  * [x] **Incident Post-Mortem 001**: Document the real-world hypervisor kernel lockup and SNO scheduling deadlock (`docs/post-mortems/2026-10-21-kernel-lockup-gpu-scheduling-deadlock.md`):
     * Summary, Timeline, Impact, and Root Cause Analysis (RCA).
-    * Deep-dive: PyTorch Inductor thread exhaustion + AVX2 absence + GPU peak draw triggering hardware PSU shutdown.
-    * Permanent engineering fixes: `--enforce-eager` and `strategy: Recreate`.
+    * Deep-dive: Kernel `console_lock` AB-BA deadlock in `TASK_UNINTERRUPTIBLE` (`D` state) during GPU sysfs unbind, PyTorch Inductor thread exhaustion on non-AVX2 Xeon CPUs, and SNO single-GPU `RollingUpdate` resource deadlock.
+    * Permanent engineering fixes: Sanitized `gpu-host-admin.py`, `--enforce-eager`, and `strategy: Recreate`.
   * [x] **Linux Hardware & Kernel Guide**: Detailed technical notes on PCIe passthrough, IOMMU grouping, sysfs driver overrides, and cgroups v2 GPU accounting (`docs/linux-kernel-and-hardware.md`).
   * [x] **RHCOS MachineConfig Declarations**: Examples of how OpenShift applies immutable kernel arguments (`intel_iommu=on`, `hugepages=1G`) via MachineConfig operator (`operators/machineconfig/`).
   * [x] **Day-2 SRE Operational Runbooks**:
